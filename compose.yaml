@@ -1,0 +1,17 @@
+services:
+  hardstuck-league:
+    build: .
+    image: hardstuck-league:latest
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      DATABASE_PATH: /data/hardstuck.sqlite
+      RIOT_API_KEY: ${RIOT_API_KEY:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in .env}
+    volumes:
+      - hardstuck-data:/data
+    restart: unless-stopped
+
+volumes:
+  hardstuck-data:

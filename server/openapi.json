@@ -1,0 +1,162 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hardstuck League API",
+    "version": "1.0.0",
+    "description": "API para consultar ligas, administrar jugadores y sincronizar rangos Solo/Duo desde Riot."
+  },
+  "servers": [{ "url": "/api" }],
+  "tags": [
+    { "name": "Público", "description": "Estado y clasificación de ligas." },
+    { "name": "Admin", "description": "Operaciones para gestionar el roster." }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Público"],
+        "summary": "Estado del backend",
+        "responses": {
+          "200": {
+            "description": "Backend disponible.",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" }, "example": { "status": "ok" } }}
+          }
+        }
+      }
+    },
+    "/leagues": {
+      "get": {
+        "tags": ["Público"],
+        "summary": "Obtener ligas y posiciones",
+        "description": "Devuelve rangos Solo/Duo guardados en SQLite, ordenados por tier, división y LP.",
+        "responses": {
+          "200": {
+            "description": "Ligas y jugadores.",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/League" } } }}
+          }
+        }
+      }
+    },
+    "/admin/players": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Agregar jugador a una liga",
+        "description": "Resuelve Riot ID, consulta PUUID y rango Solo/Duo, y guarda el roster y rango actual.",
+        "security": [{ "AdminToken": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddPlayerRequest" },
+              "example": { "gameName": "Nombre", "tagLine": "LAS", "platform": "LA2", "leagueId": "league-1" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Jugador creado.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedPlayer" } } }},
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "description": "La cuenta ya está agregada." },
+          "502": { "description": "Riot API rechazó o no pudo completar la consulta." },
+          "503": { "description": "Falta configurar ADMIN_TOKEN o RIOT_API_KEY." }
+        }
+      }
+    },
+    "/admin/players/{id}": {
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Quitar jugador",
+        "security": [{ "AdminToken": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID local del jugador." }
+        ],
+        "responses": {
+          "200": { "description": "Jugador eliminado.", "content": { "application/json": { "schema": { "type": "object", "properties": { "deleted": { "type": "boolean", "const": true } } } } }},
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "description": "No existe un jugador con ese ID." }
+        }
+      }
+    },
+    "/admin/refresh-ranks": {
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Actualizar rangos del roster",
+        "description": "Consulta Riot por PUUID y actualiza los datos Solo/Duo guardados.",
+        "security": [{ "AdminToken": [] }],
+        "responses": {
+          "200": { "description": "Todos los rangos se actualizaron.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RefreshResult" } } }},
+          "207": { "description": "Actualización parcial, incluso si Riot limita solicitudes; revisar failures.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RefreshResult" } } }},
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "503": { "description": "Falta configurar ADMIN_TOKEN o RIOT_API_KEY." }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "AdminToken": { "type": "apiKey", "in": "header", "name": "X-Admin-Token", "description": "Valor de ADMIN_TOKEN; no es la Riot API key." }
+    },
+    "schemas": {
+      "Health": { "type": "object", "properties": { "status": { "type": "string", "const": "ok" } }, "required": ["status"] },
+      "League": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "subtitle": { "type": "string" },
+          "players": { "type": "array", "items": { "$ref": "#/components/schemas/Player" } }
+        },
+        "required": ["id", "name", "subtitle", "players"]
+      },
+      "Player": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "tagline": { "type": "string" },
+          "tier": { "type": "string" },
+          "division": { "type": "string" },
+          "lp": { "type": "integer" },
+          "wins": { "type": "integer" },
+          "losses": { "type": "integer" },
+          "profileIconId": { "type": ["integer", "null"], "description": "ID del icono de perfil devuelto por Summoner-V4." },
+          "streak": { "type": ["string", "null"], "enum": ["WIN", "LOSS", null], "description": "Racha actual de al menos tres victorias o derrotas consecutivas en Solo/Duo." },
+          "note": { "type": "string", "enum": ["ASCENSO", "DESCENSO"] }
+        },
+        "required": ["id", "name", "tagline", "tier", "division", "lp", "wins", "losses"]
+      },
+      "AddPlayerRequest": {
+        "type": "object",
+        "properties": {
+          "gameName": { "type": "string", "maxLength": 64 },
+          "tagLine": { "type": "string", "maxLength": 16 },
+          "platform": { "type": "string", "enum": ["BR1", "LA1", "LA2", "NA1", "EUN1", "EUW1", "RU", "TR1", "KR", "JP1", "OC1", "PH2", "SG2", "TH2", "TW2", "VN2"] },
+          "leagueId": { "type": "string", "enum": ["league-1", "league-2"] }
+        },
+        "required": ["gameName", "tagLine", "platform", "leagueId"]
+      },
+      "CreatedPlayer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "gameName": { "type": "string" },
+          "tagLine": { "type": "string" },
+          "leagueId": { "type": "string" }
+        },
+        "required": ["id", "gameName", "tagLine", "leagueId"]
+      },
+      "RefreshResult": {
+        "type": "object",
+        "properties": {
+          "updated": { "type": "integer" },
+          "failures": { "type": "array", "items": { "type": "object", "properties": { "playerId": { "type": "string" }, "message": { "type": "string" } }, "required": ["playerId", "message"] } }
+        },
+        "required": ["updated", "failures"]
+      },
+      "Error": { "type": "object", "properties": { "error": { "type": "string" } }, "required": ["error"] }
+    },
+    "responses": {
+      "BadRequest": { "description": "Datos inválidos.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Falta un token admin válido.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    }
+  }
+}

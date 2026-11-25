@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220" fill="none">
+  <title>Hardstuck League — Down Bad</title>
+  <desc>A cheeky falling rank badge and descending arrow with the Hardstuck League wordmark.</desc>
+  <g transform="translate(25 25)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 42H70V78H112V114H154V150H196" stroke="#E9EDF2" stroke-width="11"/>
+    <path d="M151 44L177 69L201 44" stroke="#FF5C5C" stroke-width="10"/>
+    <path d="M177 22V69" stroke="#FF5C5C" stroke-width="10"/>
+    <path d="M26 164H196" stroke="#46515E" stroke-width="4"/>
+    <circle cx="113" cy="87" r="16" fill="#FFB454" stroke="none"/>
+    <path d="M106 83L111 87L106 91M119 83L124 87L119 91" stroke="#26313B" stroke-width="3"/>
+    <path d="M108 103L98 116M118 103L130 114" stroke="#FFB454" stroke-width="6"/>
+    <path d="M106 73L99 63M120 73L127 63" stroke="#FFB454" stroke-width="5"/>
+  </g>
+  <text x="248" y="110" fill="#F1F3F5" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="800" letter-spacing="1">HARDSTUCK</text>
+  <text x="251" y="152" fill="#9AA6B2" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" letter-spacing="7">LEAGUE</text>
+</svg>

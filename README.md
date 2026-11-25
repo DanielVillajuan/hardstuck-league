@@ -73,3 +73,34 @@ export default defineConfig([
 ])
 
 ```
+
+## Backend local y persistencia
+
+El frontend de Vite consume la API mediante /api. En desarrollo, completá las variables del archivo .env y ejecutá el frontend y el backend en terminales separadas:
+
+1. Copiá .env.example a .env y completá RIOT_API_KEY y ADMIN_TOKEN.
+2. Ejecutá npm run dev:api.
+3. En otra terminal, ejecutá npm run dev.
+
+El backend usa Express 5, Drizzle ORM sobre better-sqlite3 y Node 22.18 o posterior. Por defecto crea data/hardstuck.sqlite; DATABASE_PATH permite cambiar la ubicación. RIOT_API_KEY se lee exclusivamente en el proceso Node y nunca se expone al navegador. Las migraciones de Drizzle se aplican al iniciar el backend; `npm run db:generate -- --name=nombre` genera una nueva migración a partir del esquema.
+
+El backend está organizado por capas: `routes` registra las rutas y middlewares; `controllers` adapta HTTP; `services` coordina reglas de negocio y Riot API; `daos` concentra las consultas Drizzle; `models` normaliza entidades y respuestas. Match-V5 se usa durante el alta o la sincronización para detectar tres derrotas consecutivas en Solo/Duo. Las victorias consecutivas se leen del indicador `hotStreak` de League-V4. Ambos estados quedan guardados en SQLite y se publican como `streak: "WIN" | "LOSS" | null`.
+
+Documentación interactiva: /api/docs. El contrato OpenAPI en JSON está en /api/openapi.json y también se puede importar en Swagger UI o Insomnia.
+
+| Método | Endpoint | Uso | Auth |
+|---|---|---|---|
+| GET | /api/health | Estado del backend | No |
+| GET | /api/leagues | Ligas, jugadores y rangos guardados | No |
+| POST | /api/admin/players | Agregar Riot ID y asignar liga | X-Admin-Token |
+| DELETE | /api/admin/players/:id | Quitar un jugador | X-Admin-Token |
+| POST | /api/admin/refresh-ranks | Actualizar rangos Solo/Duo desde Riot | X-Admin-Token |
+
+El token administrativo se configura con ADMIN_TOKEN. La Riot API key se configura con RIOT_API_KEY, permanece en el backend y nunca se envía al navegador. En Swagger, usá el botón Authorize e ingresá ADMIN_TOKEN para probar las rutas administrativas.
+
+El home incluye un panel para agregar, quitar y actualizar jugadores.
+## Docker
+
+docker compose up --build -d construye y ejecuta el servicio en el puerto 3000. Compose monta el volumen nombrado hardstuck-data en /data, donde queda el archivo SQLite; el volumen persiste al reemplazar el contenedor. No ejecutes docker compose down -v si querés conservar esa base. Configurá RIOT_API_KEY y ADMIN_TOKEN en el archivo .env del host antes de levantar el servicio.
+
+Para publicar la imagen: docker build -t TU_USUARIO/hardstuck-league:latest . y luego docker push TU_USUARIO/hardstuck-league:latest. En el servidor, cambiá build en compose por image: TU_USUARIO/hardstuck-league:latest; mantené el volumen y pasá los secretos desde el .env del servidor, nunca desde el Dockerfile.
