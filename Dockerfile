@@ -40,7 +40,7 @@ ENV PORT=${APP_PORT}
 COPY --from=production-dependencies ${APP_DIR}/node_modules ./node_modules
 COPY --from=build ${APP_DIR}/dist ./dist
 COPY --from=build ${APP_DIR}/server ./server
-RUN mkdir -p "${DATA_DIR}" && chown -R "${APP_UID}:${APP_GID}" "${DATA_DIR}"
+# RUN mkdir -p "${DATA_DIR}" && chown -R "${APP_UID}:${APP_GID}" "${DATA_DIR}"
 USER ${APP_UID}:${APP_GID}
 EXPOSE ${APP_PORT}
 CMD ["node", "server/index.mjs"]
