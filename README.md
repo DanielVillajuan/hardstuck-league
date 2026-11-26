@@ -101,6 +101,22 @@ El token administrativo se configura con ADMIN_TOKEN. La Riot API key se configu
 El home incluye un panel para agregar, quitar y actualizar jugadores.
 ## Docker
 
-docker compose up --build -d construye y ejecuta el servicio en el puerto 3000. Compose monta el volumen nombrado hardstuck-data en /data, donde queda el archivo SQLite; el volumen persiste al reemplazar el contenedor. No ejecutes docker compose down -v si querés conservar esa base. Configurá RIOT_API_KEY y ADMIN_TOKEN en el archivo .env del host antes de levantar el servicio.
+Copiá `.env.example` a `.env`, configurá `RIOT_API_KEY` y `ADMIN_TOKEN` y ejecutá `docker compose up --build -d`. El servicio queda disponible en el puerto indicado por `HOST_PORT` (3000 por defecto).
 
-Para publicar la imagen: docker build -t TU_USUARIO/hardstuck-league:latest . y luego docker push TU_USUARIO/hardstuck-league:latest. En el servidor, cambiá build en compose por image: TU_USUARIO/hardstuck-league:latest; mantené el volumen y pasá los secretos desde el .env del servidor, nunca desde el Dockerfile.
+Compose concentra la configuración de rutas, usuario y persistencia:
+
+| Variable | Valor predeterminado | Uso |
+|---|---:|---|
+| `APP_DIR` | `/app` | Directorio de la aplicación dentro de la imagen |
+| `DATA_DIR` | `/data` | Directorio de datos dentro del contenedor |
+| `DATABASE_PATH` | `/data/hardstuck.sqlite` | Archivo SQLite dentro del contenedor; debe quedar bajo `DATA_DIR` para persistir |
+| `APP_UID` / `APP_GID` | `1000` / `1000` | Usuario y grupo con los que corre Node y se crea el directorio de datos |
+| `HOST_PORT` / `CONTAINER_PORT` | `3000` / `3000` | Puerto publicado y puerto escuchado por la app |
+| `DATA_SOURCE` | `hardstuck-data` | Origen del montaje: volumen nombrado o ruta del host |
+| `DATA_VOLUME_NAME` | `hardstuck-data` | Nombre físico del volumen Docker |
+
+El Dockerfile recibe `APP_DIR`, `DATA_DIR`, `APP_UID` y `APP_GID` como argumentos de build; Compose proporciona sus valores desde el `.env`. La imagen crea el directorio de datos con el UID/GID configurado y ejecuta el proceso con ese mismo usuario. El UID 1000 es el predeterminado. Para usar una carpeta del host en lugar del volumen nombrado, configurá `DATA_SOURCE=./data` en `.env`; si usás otro volumen nombrado, dejá `DATA_SOURCE=hardstuck-data` y cambiá `DATA_VOLUME_NAME`. Ajustá `APP_UID`/`APP_GID` al usuario que tenga permisos sobre la carpeta del host. En Linux, asigná al usuario acceso de escritura al directorio; en Docker Desktop, verificá que la carpeta del host esté compartida.
+
+El volumen nombrado persiste cuando se recrea el contenedor. `docker compose down` conserva los datos; `docker compose down -v` elimina también el volumen.
+
+Para publicar la imagen, construí desde Compose con los valores de `.env` y asigná `IMAGE_NAME=TU_USUARIO/hardstuck-league:latest`; luego ejecutá `docker compose push`. En un servidor, usá `image: TU_USUARIO/hardstuck-league:latest` en lugar de `build:` y mantené la configuración de volúmenes y secretos en Compose o en el entorno del servidor, nunca en el Dockerfile.

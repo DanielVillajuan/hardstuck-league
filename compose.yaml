@@ -1,17 +1,27 @@
 services:
   hardstuck-league:
-    build: .
-    image: hardstuck-league:latest
-    ports:
-      - "3000:3000"
-    environment:
-      PORT: "3000"
-      DATABASE_PATH: /data/hardstuck.sqlite
-      RIOT_API_KEY: ${RIOT_API_KEY:-}
-      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in .env}
-    volumes:
-      - hardstuck-data:/data
+    build:
+      context: .
+      args:
+        APP_DIR: ${APP_DIR:-/app}
+        DATA_DIR: ${DATA_DIR:-/data}
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+        APP_PORT: ${CONTAINER_PORT:-3000}
+    image: ${IMAGE_NAME:-hardstuck-league:local}
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:${CONTAINER_PORT:-3000}"
+    environment:
+      NODE_ENV: production
+      PORT: ${CONTAINER_PORT:-3000}
+      DATABASE_PATH: ${DATABASE_PATH:-/data/hardstuck.sqlite}
+      RIOT_API_KEY: ${RIOT_API_KEY:?Definí RIOT_API_KEY en .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Definí ADMIN_TOKEN en .env}
+    volumes:
+      - ${DATA_SOURCE:-hardstuck-data}:${DATA_DIR:-/data}
 
 volumes:
   hardstuck-data:
+    name: ${DATA_VOLUME_NAME:-hardstuck-data}

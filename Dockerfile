@@ -1,5 +1,12 @@
+ARG APP_DIR
+ARG DATA_DIR
+ARG APP_UID
+ARG APP_GID
+ARG APP_PORT
+
 FROM node:22-bookworm-slim AS build-dependencies
-WORKDIR /app
+ARG APP_DIR
+WORKDIR ${APP_DIR}
 COPY package*.json ./
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
@@ -7,11 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm ci
 
 FROM build-dependencies AS build
+ARG APP_DIR
+WORKDIR ${APP_DIR}
 COPY . .
 RUN npm run build
 
 FROM node:22-bookworm-slim AS production-dependencies
-WORKDIR /app
+ARG APP_DIR
+WORKDIR ${APP_DIR}
 COPY package*.json ./
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
@@ -19,14 +29,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN npm ci --omit=dev
 
 FROM node:22-bookworm-slim AS runtime
-WORKDIR /app
+ARG APP_DIR
+ARG DATA_DIR
+ARG APP_UID
+ARG APP_GID
+ARG APP_PORT
+WORKDIR ${APP_DIR}
 ENV NODE_ENV=production
-ENV PORT=3000
-ENV DATABASE_PATH=/data/hardstuck.sqlite
-COPY --from=production-dependencies /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/server ./server
-RUN mkdir -p /data && chown -R node:node /app /data
-USER node
-EXPOSE 3000
+ENV PORT=${APP_PORT}
+COPY --from=production-dependencies ${APP_DIR}/node_modules ./node_modules
+COPY --from=build ${APP_DIR}/dist ./dist
+COPY --from=build ${APP_DIR}/server ./server
+RUN mkdir -p "${DATA_DIR}" && chown -R "${APP_UID}:${APP_GID}" "${DATA_DIR}"
+USER ${APP_UID}:${APP_GID}
+EXPOSE ${APP_PORT}
 CMD ["node", "server/index.mjs"]
