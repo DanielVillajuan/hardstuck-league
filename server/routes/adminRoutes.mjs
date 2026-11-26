@@ -4,6 +4,7 @@ import { requireAdmin } from '../middleware/requireAdmin.mjs'
 
 const router = Router()
 
+router.put('/riot-api-key', requireAdmin, adminController.updateRiotApiKey)
 router.post('/players', requireAdmin, adminController.addPlayer)
 router.delete('/players/:id', requireAdmin, adminController.removePlayer)
 router.post('/refresh-ranks', requireAdmin, adminController.refreshRanks)

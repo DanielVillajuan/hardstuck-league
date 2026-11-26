@@ -26,3 +26,9 @@ export const players = sqliteTable('players', {
   lastSyncedAt: text('last_synced_at'),
   createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
+
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+})

@@ -7,6 +7,7 @@ import { AddPlayerForm } from './admin/AddPlayerForm'
 import { AdminTokenField } from './admin/AdminTokenField'
 import { PlayerRoster } from './admin/PlayerRoster'
 import { RefreshRanksControl } from './admin/RefreshRanksControl'
+import { RiotApiKeyForm } from './admin/RiotApiKeyForm'
 
 type AdminPanelProps = {
   onClose: () => void
@@ -67,6 +68,7 @@ export function AdminPanel({ onClose, onPlayerAdded }: AdminPanelProps) {
         </div>
         <div className="space-y-6 p-6">
           <AdminTokenField value={token} onChange={setToken} />
+          <RiotApiKeyForm token={token} disabled={busy} />
           <RefreshRanksControl disabled={!token || busy} isRefreshing={refreshMutation.isPending} onRefresh={() => refreshMutation.mutate()} />
           <AddPlayerForm
             leagues={leagues}

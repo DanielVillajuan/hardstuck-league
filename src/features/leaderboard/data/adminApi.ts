@@ -21,3 +21,10 @@ export function removePlayer(id: string, token: string) {
 export function refreshPlayerRanks(token: string) {
   return sendAdminRequest<{ updated: number; failures: { playerId: string; message: string }[] }>('/api/admin/refresh-ranks', token, { method: 'POST' })
 }
+export function updateRiotApiKey(apiKey: string, token: string) {
+  return sendAdminRequest<{ updated: boolean }>('/api/admin/riot-api-key', token, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ apiKey }),
+  })
+}

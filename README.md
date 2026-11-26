@@ -78,11 +78,11 @@ export default defineConfig([
 
 El frontend de Vite consume la API mediante /api. En desarrollo, completá las variables del archivo .env y ejecutá el frontend y el backend en terminales separadas:
 
-1. Copiá .env.example a .env y completá RIOT_API_KEY y ADMIN_TOKEN.
+1. Copiá .env.example a .env y completá ADMIN_TOKEN. RIOT_API_KEY es opcional si la vas a ingresar desde el panel admin.
 2. Ejecutá npm run dev:api.
 3. En otra terminal, ejecutá npm run dev.
 
-El backend usa Express 5, Drizzle ORM sobre better-sqlite3 y Node 22.18 o posterior. Por defecto crea data/hardstuck.sqlite; DATABASE_PATH permite cambiar la ubicación. RIOT_API_KEY se lee exclusivamente en el proceso Node y nunca se expone al navegador. Las migraciones de Drizzle se aplican al iniciar el backend; `npm run db:generate -- --name=nombre` genera una nueva migración a partir del esquema.
+El backend usa Express 5, Drizzle ORM sobre better-sqlite3 y Node 22.18 o posterior. Por defecto crea data/hardstuck.sqlite; DATABASE_PATH permite cambiar la ubicación. La Riot API key inicial se lee en el backend desde RIOT_API_KEY; el panel admin permite cambiarla y guardar la nueva en SQLite, que pasa a tener prioridad sin reiniciar ni redeployar la app. La key nunca se devuelve en respuestas ni se envía a lecturas del navegador. Las migraciones de Drizzle se aplican al iniciar el backend; `npm run db:generate -- --name=nombre` genera una nueva migración a partir del esquema.
 
 El backend está organizado por capas: `routes` registra las rutas y middlewares; `controllers` adapta HTTP; `services` coordina reglas de negocio y Riot API; `daos` concentra las consultas Drizzle; `models` normaliza entidades y respuestas. Match-V5 se usa durante el alta o la sincronización para detectar tres derrotas consecutivas en Solo/Duo. Las victorias consecutivas se leen del indicador `hotStreak` de League-V4. Ambos estados quedan guardados en SQLite y se publican como `streak: "WIN" | "LOSS" | null`.
 
@@ -92,16 +92,17 @@ Documentación interactiva: /api/docs. El contrato OpenAPI en JSON está en /api
 |---|---|---|---|
 | GET | /api/health | Estado del backend | No |
 | GET | /api/leagues | Ligas, jugadores y rangos guardados | No |
+| PUT | /api/admin/riot-api-key | Guardar una nueva Riot API key | X-Admin-Token |
 | POST | /api/admin/players | Agregar Riot ID y asignar liga | X-Admin-Token |
 | DELETE | /api/admin/players/:id | Quitar un jugador | X-Admin-Token |
 | POST | /api/admin/refresh-ranks | Actualizar rangos Solo/Duo desde Riot | X-Admin-Token |
 
-El token administrativo se configura con ADMIN_TOKEN. La Riot API key se configura con RIOT_API_KEY, permanece en el backend y nunca se envía al navegador. En Swagger, usá el botón Authorize e ingresá ADMIN_TOKEN para probar las rutas administrativas.
+El token administrativo se configura con ADMIN_TOKEN. Podés pasar una Riot API key inicial con RIOT_API_KEY o guardarla desde el panel admin; el backend la persiste en SQLite. El valor ingresado no vuelve a mostrarse y la ruta administrativa nunca devuelve la key. En Swagger, usá el botón Authorize e ingresá ADMIN_TOKEN para probar las rutas administrativas.
 
 El home incluye un panel para agregar, quitar y actualizar jugadores.
 ## Docker
 
-Copiá `.env.example` a `.env`, configurá `RIOT_API_KEY` y `ADMIN_TOKEN` y ejecutá `docker compose up --build -d`. El servicio queda disponible en el puerto indicado por `HOST_PORT` (3000 por defecto).
+Copiá `.env.example` a `.env`, configurá `ADMIN_TOKEN` y ejecutá `docker compose up --build -d`. `RIOT_API_KEY` es opcional; podés ingresar la key desde el panel admin. El servicio queda disponible en el puerto indicado por `HOST_PORT` (3000 por defecto). La key configurada desde el panel se conserva en SQLite dentro del volumen de datos.
 
 Compose concentra la configuración de rutas, usuario y persistencia:
 

@@ -17,7 +17,7 @@ services:
       NODE_ENV: production
       PORT: ${CONTAINER_PORT:-3000}
       DATABASE_PATH: ${DATABASE_PATH:-/data/hardstuck.sqlite}
-      RIOT_API_KEY: ${RIOT_API_KEY:?Definí RIOT_API_KEY en .env}
+      RIOT_API_KEY: ${RIOT_API_KEY:-}
       ADMIN_TOKEN: ${ADMIN_TOKEN:?Definí ADMIN_TOKEN en .env}
     volumes:
       - ${DATA_SOURCE:-hardstuck-data}:${DATA_DIR:-/data}

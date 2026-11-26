@@ -1,4 +1,9 @@
 import * as playerService from '../services/playerService.mjs'
+import { saveNewRiotApiKey } from '../services/riotApiKeyService.mjs'
+
+export function updateRiotApiKey(req, res) {
+  res.json(saveNewRiotApiKey(req.body?.apiKey))
+}
 
 export async function addPlayer(req, res) {
   const player = await playerService.addPlayer(req.body || {})
